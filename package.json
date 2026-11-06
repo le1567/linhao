@@ -1,0 +1,10 @@
+{
+  "name": "liquid-glass-engine",
+  "version": "1.0.0",
+  "description": "自研液态玻璃动画引擎 — iOS 风格交互体验（弹簧物理 / 手势 / WebGL 流体 / 玻璃材质）",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8080 || npx -y serve -l 8080 ."
+  },
+  "license": "MIT"
+}
