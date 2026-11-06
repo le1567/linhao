@@ -191,6 +191,11 @@ const BUILDERS = {
     const root = el.firstChild;
     root.innerHTML = `
       <div class="ck-face">
+        <span class="ck-ticks"></span>
+        <span class="ck-n n12">12</span>
+        <span class="ck-n n3">3</span>
+        <span class="ck-n n6">6</span>
+        <span class="ck-n n9">9</span>
         <span class="ck-h" id="ck-h"></span>
         <span class="ck-m" id="ck-m"></span>
         <span class="ck-s" id="ck-s"></span>
@@ -281,6 +286,7 @@ const BUILDERS = {
     root.innerHTML = `
       <div class="cam-view">
         <div class="cam-frame glass">
+          <div class="cam-grid"></div>
           <div class="cam-hint">流体取景器 · 指尖划过屏幕试试</div>
         </div>
       </div>
@@ -466,30 +472,40 @@ function settingApp(el) {
   el.appendChild(div('app settings-app'));
   const root = el.firstChild;
   root.innerHTML = `
-    <div class="st-wrap">
-      <div class="st-title">设置</div>
-      <div class="st-group glass">
-        ${row('st-row-fluid', glyphs.sun, '流体壁纸', 'sw', true)}
-        ${row('st-row-refract', glyphs.weather, '玻璃折射', 'sw', true)}
-      </div>
-      <div class="st-group glass">
-        <div class="st-row"><div class="st-ic">${glyphs.settings}</div><div class="st-body">
-          <div class="st-label">玻璃模糊强度</div>
-          <div class="st-slider" id="st-blur"><div class="st-fill"></div></div>
-        </div><span class="st-val" id="st-blur-v"></span></div>
-        <div class="st-row"><div class="st-ic">${glyphs.sun}</div><div class="st-body">
-          <div class="st-label">屏幕亮度</div>
-          <div class="st-slider" id="st-bright"><div class="st-fill"></div></div>
-        </div><span class="st-val" id="st-bright-v"></span></div>
-      </div>
-      <div class="st-group glass">
-        <div class="st-row"><div class="st-ic">${glyphs.appstore}</div><div class="st-body">
-          <div class="st-label">引擎</div><div class="st-sub">Liquid Glass Engine v1.0</div></div></div>
-        <div class="st-row"><div class="st-ic">${glyphs.photos}</div><div class="st-body">
-          <div class="st-label">渲染</div><div class="st-sub">WebGL2 流体 + 弹簧物理 + 折射滤镜</div></div></div>
+    <div class="st-layout">
+      <aside class="st-hero">
+        <div class="st-orb"><span></span></div>
+        <div class="st-hero-title">设置</div>
+        <div class="st-hero-sub">Liquid Glass Engine</div>
+        <div class="st-hero-desc">自研弹簧物理 · WebGL2 流体<br>折射玻璃材质 · 跟手触控</div>
+        <div class="st-chips">
+          <span class="glass">弹簧物理</span><span class="glass">流体</span><span class="glass">折射</span>
+        </div>
+      </aside>
+      <div class="st-wrap">
+        <div class="st-group glass">
+          ${row('st-row-fluid', glyphs.sun, '流体壁纸', 'sw', true)}
+          ${row('st-row-refract', glyphs.weather, '玻璃折射', 'sw', true)}
+        </div>
+        <div class="st-group glass">
+          <div class="st-row"><div class="st-ic">${glyphs.settings}</div><div class="st-body">
+            <div class="st-label">玻璃模糊强度</div>
+            <div class="st-slider" id="st-blur"><div class="st-fill"></div></div>
+          </div><span class="st-val" id="st-blur-v"></span></div>
+          <div class="st-row"><div class="st-ic">${glyphs.sun}</div><div class="st-body">
+            <div class="st-label">屏幕亮度</div>
+            <div class="st-slider" id="st-bright"><div class="st-fill"></div></div>
+          </div><span class="st-val" id="st-bright-v"></span></div>
+        </div>
+        <div class="st-group glass">
+          <div class="st-row"><div class="st-ic">${glyphs.appstore}</div><div class="st-body">
+            <div class="st-label">引擎</div><div class="st-sub">Liquid Glass Engine v1.0</div></div></div>
+          <div class="st-row"><div class="st-ic">${glyphs.photos}</div><div class="st-body">
+            <div class="st-label">渲染</div><div class="st-sub">WebGL2 流体 + 弹簧物理 + 折射滤镜</div></div></div>
+        </div>
       </div>
     </div>`;
-  el.querySelectorAll('.st-group').forEach((g) =>
+  el.querySelectorAll('.st-group, .st-hero, .st-chips span').forEach((g) =>
     glassify(g, { blur: 14, tint: 'rgba(255,255,255,0.045)' })
   );
 

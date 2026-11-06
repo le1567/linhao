@@ -34,7 +34,7 @@ export class Ticker {
 
   _frame(t) {
     if (!this._running) return;
-    const dt = Math.min((t - this._last) / 1000, 1 / 30); // 钳制，避免切后台后弹簧爆炸
+    const dt = Math.min((t - this._last) / 1000, 1 / 12); // 钳制，避免切后台后弹簧爆炸
     this._last = t;
     for (const fn of [...this.subs]) fn(dt, t / 1000);
     if (this.subs.size) requestAnimationFrame(this._frame);

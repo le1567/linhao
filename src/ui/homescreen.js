@@ -64,8 +64,12 @@ export function initHomescreen(openApp) {
       offset.set(x);
     },
     onPanEnd: (c) => {
-      const projected = -(offset.value + c.vx * 0.12) / pageW;
-      const idx = Math.max(0, Math.min(PAGES.length - 1, Math.round(projected)));
+      // 相对当前页的连续进度（含 120ms 速度预测）：拖过 30% 页宽，或快速一甩即翻页
+      const p = -offset.value / pageW;
+      const proj = p - (c.vx * 0.12) / pageW;
+      let idx = pageIndex;
+      if (proj > pageIndex + 0.3) idx = Math.min(PAGES.length - 1, pageIndex + 1);
+      else if (proj < pageIndex - 0.3) idx = Math.max(0, pageIndex - 1);
       goTo(idx, c.vx);
     },
   });
@@ -77,9 +81,12 @@ export function initHomescreen(openApp) {
 
   function goTo(idx, vx = 0) {
     pageIndex = idx;
-    offset.to(-idx * pageW);
-    // 注入释放速度 → 带惯性收敛
-    if (Math.abs(vx) > 200) offset.addVelocity(vx * 0.9);
+    const target = -idx * pageW;
+    offset.to(target);
+    // 仅在速度方向与目标一致时注入惯性，避免回弹过冲
+    if (Math.abs(vx) > 200 && Math.sign(target - offset.value) === Math.sign(vx)) {
+      offset.addVelocity(vx * 0.7);
+    }
   }
 
   emit('home-ready');
@@ -147,7 +154,7 @@ function buildDock(openApp) {
     dock.appendChild(el);
     wireIcon(el, id, openApp);
   });
-  glassify(dock, { blur: 22, tint: 'rgba(18,20,40,0.30)', light: 0.7, refract: true });
+  glassify(dock, { blur: 24, tint: 'rgba(18,20,40,0.20)', light: 0.7, refract: true });
 }
 
 function wireIcon(el, id, openApp) {
@@ -224,7 +231,7 @@ const WIDGETS = {
       <div class="w-clock-city">上海</div>
       <div class="w-clock-time" id="w-clock">--:--</div>
       <div class="w-clock-date" id="w-clock-date"></div>`;
-    glassify(el, { blur: 18, tint: 'rgba(16,18,42,0.34)', refract: true });
+    glassify(el, { blur: 20, tint: 'rgba(16,18,42,0.20)', refract: true });
     const tEl = el.querySelector('#w-clock');
     const dtEl = el.querySelector('#w-clock-date');
     const upd = () => {
@@ -245,7 +252,7 @@ const WIDGETS = {
       <div class="w-wx-top"><span>上海</span><span class="w-wx-glyph">${glyphs.weather}</span></div>
       <div class="w-wx-temp">22°</div>
       <div class="w-wx-sub">多云 · 最高26° 最低19°</div>`;
-    glassify(el, { blur: 18, tint: 'rgba(20,40,80,0.34)', refract: true });
+    glassify(el, { blur: 20, tint: 'rgba(20,40,80,0.20)', refract: true });
     return el;
   },
 
@@ -261,7 +268,7 @@ const WIDGETS = {
         </div>
         <div class="w-music-bars"><span></span><span></span><span></span></div>
       </div>`;
-    glassify(el, { blur: 18, tint: 'rgba(40,16,52,0.36)', refract: true });
+    glassify(el, { blur: 20, tint: 'rgba(40,16,52,0.22)', refract: true });
     return el;
   },
 
@@ -275,7 +282,7 @@ const WIDGETS = {
         <div class="item done">弹簧物理调参</div>
         <div class="item">部署上线</div>
       </div>`;
-    glassify(el, { blur: 18, tint: 'rgba(50,44,12,0.34)', refract: true });
+    glassify(el, { blur: 20, tint: 'rgba(50,44,12,0.20)', refract: true });
     return el;
   },
 };

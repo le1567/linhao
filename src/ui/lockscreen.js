@@ -54,7 +54,7 @@ export function initLockscreen(openApp) {
     },
     onPanEnd: (c) => {
       const H = lockEl.getBoundingClientRect().height;
-      const shouldUnlock = -offset.value > 110 || c.vy < -650;
+      const shouldUnlock = -offset.value > 78 || c.vy < -320;
       if (!unlocked && shouldUnlock) unlock(H);
       else offset.to(0);
     },
@@ -64,12 +64,19 @@ export function initLockscreen(openApp) {
     unlocked = true;
     state.unlocked = true; // 立即放行交互，动画只负责视觉退场
     lockEl.style.pointerEvents = 'none';
+    document.getElementById('screen')?.classList.remove('locked');
     emit('unlock');
     offset.to(-H * 1.15);
     offset.onRest = () => {
       lockEl.style.display = 'none';
       offset.onRest = null;
     };
+    // 兜底：低帧率下弹簧 onRest 可能迟到，保证锁屏一定退场
+    setTimeout(() => {
+      if (!unlocked) return;
+      lockEl.style.display = 'none';
+      offset.onRest = null;
+    }, 900);
     emit('unlock-start');
   }
 }

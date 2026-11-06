@@ -133,15 +133,11 @@ precision highp float;
 in vec2 vUv; out vec4 outColor;
 uniform sampler2D uDye;
 uniform float uTime;
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 void main() {
-  vec3 dye = texture(uDye, vUv).rgb;
-  vec3 bg = mix(vec3(0.016, 0.020, 0.050), vec3(0.050, 0.030, 0.095), vUv.y);
-  vec3 c = bg + dye;
-  vec2 q = vUv - 0.5;
-  c *= 1.0 - 0.5 * dot(q, q);                     // 暗角
-  c += (hash(vUv * 512.0 + fract(uTime) * 7.0) - 0.5) * 0.012; // 胶片颗粒
-  outColor = vec4(c, 1.0);
+  // 只输出染料，背景交给 CSS 壁纸（画布以 screen 混合叠在壁纸上）
+  vec3 dye = clamp(texture(uDye, vUv).rgb, 0.0, 4.0);
+  dye = (1.0 - exp(-dye * 1.55)) * 0.95;
+  outColor = vec4(dye, 1.0);
 }`,
 };
 
@@ -149,12 +145,12 @@ const SIM_RES = 128;
 const DYE_RES = 512;
 const PRESSURE_ITER = 20;
 const CFG = {
-  densityDissipation: 0.8,
+  densityDissipation: 2.6,
   velocityDissipation: 0.25,
   pressure: 0.8,
   curl: 26,
-  splatRadius: 0.0022,
-  splatForce: 5200,
+  splatRadius: 0.0009,
+  splatForce: 2200,
 };
 
 export class Fluid {
@@ -162,7 +158,8 @@ export class Fluid {
     this.canvas = canvas;
     this.ok = false;
     const gl = canvas.getContext('webgl2', {
-      alpha: false, depth: false, stencil: false, antialias: false,
+      alpha: true, depth: false, stencil: false, antialias: false,
+      premultipliedAlpha: true,
       preserveDrawingBuffer: false,
     });
     if (!gl) return;
@@ -303,8 +300,16 @@ export class Fluid {
   }
 
   _nextColor() {
-    this._hue = (this._hue + 0.13 + Math.random() * 0.1) % 1;
-    return hsv(this._hue, 0.85, 1).map((c) => c * 0.22);
+    this._hue = (this._hue + 0.17) % 1;
+    return hsv(this._hue, 0.92, 1).map((c) => c * 0.34);
+  }
+
+  /** 取一支新色（一次手势内共用，避免彩虹噪点） */
+  nextColor() {
+    // 只在高饱和的紫/青/粉/蓝之间取色，避免黄绿色发脏
+    const palette = [0.74, 0.55, 0.92, 0.48, 0.62];
+    this._pi = ((this._pi ?? -1) + 1) % palette.length;
+    return hsv(palette[this._pi], 0.9, 1).map((c) => c * 0.34);
   }
 
   /** x,y ∈ [0,1]（左上原点），dx,dy 为位移强度 */
@@ -398,7 +403,11 @@ export class Fluid {
     this._blit(this.dye.write);
     this.dye.swap();
 
-    // 上屏
+    // 上屏（画布透明，染料以 screen 模式叠在 CSS 壁纸上）
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
     p = this._use(this.progs.display);
     gl.uniform2f(p.uniforms.uTexel, ...this.dye.read.texel);
     gl.uniform1i(p.uniforms.uDye, this.dye.read.attach(0));
