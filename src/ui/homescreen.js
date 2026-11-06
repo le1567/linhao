@@ -10,7 +10,7 @@ import { toast } from './toast.js';
 const PAGES = [
   {
     widgets: ['clockWidget', 'weatherWidget'],
-    icons: ['photos', 'notes', 'calculator', 'clock', 'weather', 'settings', 'mail', 'maps', 'calendar', 'health', 'wallet', 'appstore'],
+    icons: ['photos', 'notes', 'calculator', 'clock', 'weather', 'settings', 'mail', 'maps', 'calendar', 'health', 'wallet', 'appstore', 'reminders', 'translate', 'stocks', 'home'],
   },
   {
     wide: true,

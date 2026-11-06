@@ -9,6 +9,7 @@ import { spectrum, isPlaying, togglePlay } from './audio.js';
 import { toast } from './toast.js';
 import { gestures } from '../engine/gestures.js';
 import { settings, setSetting, applyBrightness } from './settings.js';
+import { extraApps, cleanupExtraApps } from './moreapps.js';
 
 let appEl, contentEl, screenEl;
 let scaleS, radiusS;
@@ -44,6 +45,7 @@ export function openApp(id, iconEl) {
 
   openId = id;
   state.appOpen = { id, iconEl };
+  cleanupExtraApps();
   contentEl.innerHTML = '';
   const build = BUILDERS[id];
   try {
@@ -93,6 +95,7 @@ export function closeApp() {
   emit('app-close', id);
   visualUnsub?.();
   visualUnsub = null;
+  cleanupExtraApps();
 
   scaleS.onRest = () => {
     appEl.classList.remove('open');
@@ -110,36 +113,78 @@ const BUILDERS = {
     el.appendChild(div('app music-app'));
     const root = el.firstChild;
     root.innerHTML = `
-      <div class="m-art"><div class="m-disc"></div></div>
+      <div class="m-art"><div class="m-disc" id="m-disc"></div></div>
       <div class="m-side">
         <div class="m-meta">
-          <div class="t">Liquid Dreams</div>
-          <div class="a">Aurora Engine · 液态玻璃</div>
+          <div class="t" id="m-title">Liquid Dreams</div>
+          <div class="a" id="m-artist">Aurora Engine · 液态玻璃</div>
         </div>
         <div class="m-progress"><div class="m-bar" id="m-bar"></div></div>
+        <div class="m-times"><span id="m-cur">0:00</span><span id="m-dur">3:42</span></div>
         <div class="m-viz" id="m-viz"></div>
         <div class="m-ctrl">
           <span class="m-btn" id="m-prev">${glyphs.back}</span>
           <span class="m-btn big glass" id="m-play">${glyphs.play}</span>
           <span class="m-btn" id="m-next">${glyphs.fwd}</span>
         </div>
+        <div class="m-list" id="m-list"></div>
       </div>`;
     glassify(root.querySelector('#m-play'), { blur: 14 });
 
+    const TRACKS = [
+      { t: 'Liquid Dreams', a: 'Aurora Engine · 环境音乐', d: 222 },
+      { t: 'Glass Horizon', a: 'Aurora Engine · 氛围铺底', d: 245 },
+      { t: 'Refraction', a: 'Liquid Choir · 实验电子', d: 198 },
+    ];
+    let track = 0;
+    let pos = 0;
+
+    const titleEl = root.querySelector('#m-title');
+    const artistEl = root.querySelector('#m-artist');
+    const barEl = root.querySelector('#m-bar');
+    const curEl = root.querySelector('#m-cur');
+    const durEl = root.querySelector('#m-dur');
+    const disc = root.querySelector('#m-disc');
+    const listEl = root.querySelector('#m-list');
+
+    const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+    const paint = () => {
+      const tr = TRACKS[track];
+      titleEl.textContent = tr.t;
+      artistEl.textContent = tr.a;
+      durEl.textContent = fmt(tr.d);
+      curEl.textContent = fmt(pos);
+      barEl.style.width = `${(pos / tr.d * 100).toFixed(2)}%`;
+      disc.style.animationPlayState = isPlaying() ? 'running' : 'paused';
+      [...listEl.children].forEach((r, i) => r.classList.toggle('on', i === track));
+    };
+    const load = (i, keepPlaying = true) => {
+      track = (i + TRACKS.length) % TRACKS.length;
+      pos = 0;
+      if (!keepPlaying && isPlaying()) togglePlay();
+      paint();
+    };
+
+    listEl.innerHTML = TRACKS.map((tr, i) => `
+      <button class="m-track" data-i="${i}">
+        <span class="m-track-no">${String(i + 1).padStart(2, '0')}</span>
+        <span class="m-track-body"><b>${tr.t}</b><i>${tr.a}</i></span>
+        <span class="m-track-d">${fmt(tr.d)}</span>
+      </button>`).join('');
+    listEl.querySelectorAll('.m-track').forEach((r) => {
+      pressable(r, { scale: 0.97, flash: false, onTap: () => load(Number(r.dataset.i)) });
+    });
+
     const viz = root.querySelector('#m-viz');
-    const bars = [];
     const springs = [];
     for (let i = 0; i < 22; i++) {
       const b = document.createElement('span');
       viz.appendChild(b);
-      bars.push(b);
       const s = new Spring(0.1, { stiffness: 240, damping: 15 });
       s.onUpdate = (v) => (b.style.transform = `scaleY(${Math.max(0.06, v).toFixed(3)})`);
       springs.push(s);
     }
-    let phase = 0;
     visualUnsub = ticker.add((dt, t) => {
-      phase += dt;
       const spec = spectrum(22);
       for (let i = 0; i < 22; i++) {
         const target = isPlaying()
@@ -147,17 +192,27 @@ const BUILDERS = {
           : 0.12 + Math.sin(t * 1.8 + i * 0.55) * 0.09;
         springs[i].to(target);
       }
+      if (isPlaying()) {
+        pos += dt;
+        const tr = TRACKS[track];
+        if (pos >= tr.d) {
+          track = (track + 1) % TRACKS.length;
+          pos = 0;
+        }
+        paint();
+      }
     });
 
     const playBtn = root.querySelector('#m-play');
-    playBtn._set = (p) => (playBtn.innerHTML = p ? glyphs.pause : glyphs.play);
+    playBtn._set = (p) => {
+      playBtn.innerHTML = p ? glyphs.pause : glyphs.play;
+      disc.style.animationPlayState = p ? 'running' : 'paused';
+    };
     playBtn._set(isPlaying());
-    pressable(playBtn, {
-      scale: 0.88,
-      onTap: () => playBtn._set(togglePlay()),
-    });
-    pressable(root.querySelector('#m-prev'), { scale: 0.8, onTap: () => toast('上一首（演示）') });
-    pressable(root.querySelector('#m-next'), { scale: 0.8, onTap: () => toast('下一首（演示）') });
+    pressable(playBtn, { scale: 0.88, onTap: () => playBtn._set(togglePlay()) });
+    pressable(root.querySelector('#m-prev'), { scale: 0.8, onTap: () => load(track - 1) });
+    pressable(root.querySelector('#m-next'), { scale: 0.8, onTap: () => load(track + 1) });
+    paint();
   },
 
   weather(el) {
@@ -467,6 +522,8 @@ const BUILDERS = {
   /* ── 设置：开关 / 滑杆全部实时生效 ── */
   settings: settingApp,
 };
+
+Object.assign(BUILDERS, extraApps);
 
 function settingApp(el) {
   el.appendChild(div('app settings-app'));
