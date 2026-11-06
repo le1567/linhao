@@ -254,7 +254,7 @@ export class Fluid {
   resize() {
     if (!this.ok) return;
     const gl = this.gl;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
     const w = Math.max(2, Math.floor(this.canvas.clientWidth * dpr));
     const h = Math.max(2, Math.floor(this.canvas.clientHeight * dpr));
     if (this.canvas.width === w && this.canvas.height === h && this.velocity) return;

@@ -21,7 +21,7 @@ export function supportsDistort() {
 /* ── 全局玻璃调节（设置 APP 实时生效） ── */
 const glassRegistry = new Set(); // { el, baseBlur, refract }
 let blurScale = 1;
-let refractOn = true;
+let refractOn = false;
 
 function applyGlass(item) {
   if (!item.el.isConnected) { glassRegistry.delete(item); return; }
@@ -67,7 +67,7 @@ export function glassify(el, opts = {}) {
   el.addEventListener('pointerdown', onMove);
   el.addEventListener('pointerleave', onLeave);
 
-  if (opts.refract && supportsDistort()) el.classList.add('refract');
+  if (opts.refract && refractOn && supportsDistort()) el.classList.add('refract');
   onLeave();
   return el;
 }

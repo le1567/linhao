@@ -84,8 +84,16 @@ svg.defs { position: absolute; }
   border-radius: 36px;
   overflow: hidden;
   background: #05060f;
-  filter: brightness(var(--bright, 1));
   touch-action: none;
+}
+/* 亮度遮罩：不再用 filter，避免与 backdrop-filter 叠加产生闪烁 */
+#screen-dim {
+  position: absolute; inset: 0;
+  z-index: 96;
+  pointer-events: none;
+  background: #000;
+  opacity: calc(1 - var(--bright, 1));
+  transition: opacity 0.2s linear;
 }
 #fluid {
   position: absolute; inset: 0;
@@ -97,8 +105,8 @@ svg.defs { position: absolute; }
   transition: filter 0.5s var(--ease-ios), transform 0.5s var(--ease-ios), opacity 0.5s var(--ease-ios);
 }
 #screen.app-open #fluid {
-  filter: blur(22px) brightness(0.66) saturate(1.25);
-  transform: scale(1.08);
+  opacity: 0.28;
+  transform: scale(1.04);
 }
 #screen.no-fluid #fluid { opacity: 0; }
 #screen.no-fluid {
@@ -123,9 +131,10 @@ svg.defs { position: absolute; }
 .wall-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(64px);
-  opacity: 0.44;
+  filter: blur(58px);
+  opacity: 0.55;
   mix-blend-mode: screen;
+  will-change: transform;
   animation: orbFloat 24s ease-in-out infinite alternate;
 }
 .wall-orb.w1 { width: 46%; aspect-ratio: 1; left: -8%; top: -12%; background: radial-gradient(circle, #6a3cff, transparent 70%); }
@@ -455,9 +464,9 @@ svg.defs { position: absolute; }
   z-index: 30;
   touch-action: none;
   background:
-    radial-gradient(110% 70% at 50% -8%, rgba(124, 92, 255, 0.20), transparent 62%),
-    radial-gradient(80% 60% at 84% 100%, rgba(255, 92, 157, 0.14), transparent 66%),
-    linear-gradient(180deg, rgba(7, 8, 20, 0.26) 0%, rgba(7, 8, 20, 0.42) 44%, rgba(5, 6, 16, 0.70) 100%);
+    radial-gradient(110% 70% at 50% -8%, rgba(124, 92, 255, 0.26), transparent 62%),
+    radial-gradient(80% 60% at 84% 100%, rgba(255, 92, 157, 0.18), transparent 66%),
+    linear-gradient(180deg, rgba(7, 8, 20, 0.14) 0%, rgba(7, 8, 20, 0.30) 44%, rgba(5, 6, 16, 0.56) 100%);
 }
 .lock-inner {
   position: absolute; inset: 0;
@@ -1260,4 +1269,151 @@ svg.defs { position: absolute; }
 /* 小视口：隐藏舞台说明文字 */
 @media (max-width: 760px), (max-height: 560px) {
   .stage-caption { display: none; }
+}
+
+/* 触控优化：禁止双击缩放/长按菜单，只允许应用内纵向滚动 */
+html, body { overscroll-behavior: none; }
+body { -webkit-touch-callout: none; touch-action: manipulation; }
+.app { touch-action: pan-y; }
+
+/* ── 手机竖屏：铺满全屏，按手指尺寸重排 ── */
+@media (max-width: 699px) and (orientation: portrait) {
+  .aurora, .stage-caption { display: none; }
+  #device {
+    width: 100vw; height: 100dvh;
+    padding: 0;
+    border-radius: 0;
+    background: #05060f;
+    box-shadow: none;
+  }
+  #screen { width: 100%; height: 100%; border-radius: 0; }
+
+  /* 状态栏 / 灵动岛 */
+  #statusbar { height: auto; padding: calc(10px + env(safe-area-inset-top)) 20px 0; font-size: 14px; }
+  #island { top: calc(7px + env(safe-area-inset-top)); width: 104px; height: 30px; border-radius: 15px; }
+  .island-mini { padding: 0 14px 0 16px; }
+  .island-meta .t { font-size: 11px; }
+  .island-cam { width: 8px; height: 8px; right: 12px; }
+
+  /* 主屏 */
+  #homescreen { padding-top: calc(56px + env(safe-area-inset-top)); }
+  .page { padding: 0 16px; }
+  .grid { gap: 18px; }
+  .widgets { gap: 12px; }
+  .widget { height: 138px; border-radius: 22px; padding: 13px 15px; }
+  .widgets.wide { grid-template-columns: 1fr; }
+  .widgets.wide .widget { height: 176px; padding: 16px 18px; }
+  .w-clock-time { font-size: 30px; }
+  .w-clock-city { font-size: 11px; }
+  .w-clock-date { font-size: 10.5px; }
+  .w-wx-temp { font-size: 27px; }
+  .w-wx-sub { font-size: 10px; }
+  .widgets.wide .w-clock-time { font-size: 34px; }
+  .widgets.wide .w-wx-temp { font-size: 34px; }
+  .icons { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 16px; column-gap: 6px; }
+  .icon { width: auto; gap: 5px; }
+  .plate { width: 54px; height: 54px; border-radius: 16px; }
+  .plate .glyph { width: 26px; height: 26px; }
+  .icon .label { font-size: 11px; }
+  .badge { width: 17px; height: 17px; top: -4px; left: -4px; }
+  .badge svg { width: 9px; height: 9px; }
+  #dots { bottom: calc(126px + env(safe-area-inset-bottom)); gap: 7px; }
+  #dock {
+    left: 12px; right: 12px;
+    bottom: calc(30px + env(safe-area-inset-bottom));
+    width: auto; min-width: 0; height: 82px;
+    transform: none; padding: 0 8px; gap: 0;
+    border-radius: 26px;
+    justify-content: space-around;
+  }
+  #dock .icon { width: auto; }
+  .dock-plate { width: 50px !important; height: 50px !important; border-radius: 15px; }
+  .dock-plate .glyph { width: 24px; height: 24px; }
+  #homebar-zone { height: calc(24px + env(safe-area-inset-bottom)); }
+  #homebar { width: 118px; }
+
+  /* 锁屏 */
+  .lock-top { margin-top: calc(84px + env(safe-area-inset-top)); }
+  .lock-clock { font-size: clamp(62px, 20vw, 84px); }
+  .lock-date { font-size: 15px; }
+  .notif { max-width: calc(100% - 32px); border-radius: 20px; padding: 12px 14px; margin-top: 22px; }
+  .lock-btn { width: 46px; height: 46px; }
+  #toast { bottom: calc(122px + env(safe-area-inset-bottom)); white-space: normal; max-width: calc(100% - 40px); text-align: center; }
+
+  /* 通用应用 */
+  .app { padding: calc(60px + env(safe-area-inset-top)) 16px 40px; }
+  #appscreen, #app-content { touch-action: pan-y; }
+  .settings-app { padding: calc(60px + env(safe-area-inset-top)) 14px 30px; justify-content: flex-start; }
+  #screen.app-open #statusbar {
+    background: linear-gradient(180deg, rgba(5,6,15,0.80), rgba(5,6,15,0));
+  }
+  .st-layout { grid-template-columns: 1fr; gap: 14px; }
+  .st-hero { border-radius: 22px; padding: 18px 18px 16px; }
+  .st-orb { width: 64px; height: 64px; margin-bottom: 12px; border-radius: 18px; }
+  .st-orb span { width: 40px; height: 40px; }
+  .st-hero-title { font-size: 26px; }
+  .st-hero-desc { margin-top: 8px; }
+  .st-chips { padding-top: 12px; }
+  .st-row { padding: 12px 16px; }
+
+  /* 计算器 */
+  .calc-app { width: 100%; padding: 0 16px; gap: 14px; }
+  .calc-screen { min-height: 86px; border-radius: 20px; font-size: 34px; }
+  .calc-grid { gap: 10px; }
+  .calc-key { height: 56px; border-radius: 14px; font-size: 20px; }
+
+  /* 天气 */
+  .weather-app { flex-direction: column; justify-content: flex-start; gap: 14px; padding: calc(68px + env(safe-area-inset-top)) 14px 24px; }
+  .wx-main {
+    display: grid; width: 100%; text-align: left;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "city temp" "desc temp" "range temp";
+    align-items: center;
+  }
+  .wx-city { grid-area: city; font-size: 20px; margin: 0; }
+  .wx-temp { grid-area: temp; font-size: 62px; }
+  .wx-desc { grid-area: desc; font-size: 13px; }
+  .wx-range { grid-area: range; font-size: 12px; }
+  .wx-cards { width: 100%; max-width: none; gap: 10px; }
+  .wx-card { border-radius: 18px; padding: 12px 8px; }
+  .wx-h { font-size: 11px; gap: 6px; }
+  .wx-h .g svg { width: 15px; height: 15px; }
+  .wx-d { font-size: 11px; gap: 5px; }
+  .wx-note { font-size: 12px; }
+
+  /* 音乐 */
+  .music-app { flex-direction: column; gap: 22px; padding: calc(64px + env(safe-area-inset-top)) 20px 30px; }
+  .m-art { width: 180px; height: 180px; border-radius: 30px; }
+  .m-disc { width: 140px; height: 140px; }
+  .m-disc::after { width: 38px; height: 38px; }
+  .m-side { width: 100%; max-width: none; gap: 14px; }
+  .m-meta .t { font-size: 21px; }
+  .m-viz { height: 44px; }
+  .m-viz span { width: 5px; height: 44px; }
+  .m-ctrl { gap: 30px; }
+  .m-btn.big { width: 66px; height: 66px; }
+
+  /* 时钟 */
+  .clock-app { flex-direction: column; justify-content: flex-start; gap: 16px; padding: calc(64px + env(safe-area-inset-top)) 16px 24px; }
+  .ck-face { transform: scale(0.8); margin: -32px auto; }
+  .ck-digital { font-size: 26px; }
+  .ck-zone { font-size: 12px; }
+
+  .camera-app { padding: calc(58px + env(safe-area-inset-top)) 14px 30px; }
+  .cam-view { margin-top: 0; }
+  .cam-frame { border-radius: 24px; }
+  .notes-app { padding: calc(60px + env(safe-area-inset-top)) 14px 30px; }
+
+  /* 控制中心 */
+  #cc-panel {
+    left: 12px; right: 12px;
+    top: calc(10px + env(safe-area-inset-top));
+    width: auto; border-radius: 30px;
+  }
+  .cc-grid { gap: 10px; }
+  .cc-card { border-radius: 22px; padding: 12px; }
+  .cc-slider { height: 140px; border-radius: 24px; }
+  .cc-fill { border-radius: 18px; }
+  .cc-toggle { width: 40px; height: 40px; }
+  .cc-tile { max-width: 54px; }
 }

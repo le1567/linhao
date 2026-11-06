@@ -25,7 +25,14 @@ initApps();
 const fluid = new Fluid(canvas);
 let fluidOK = fluid.ok;
 if (fluidOK) {
-  ticker.add((dt) => fluid.step(dt));
+  // 限到 ~40fps，并把单步 dt 收在 1/24 内：降低 GPU 占用的同时让流场更稳定
+  let fluidAcc = 0;
+  ticker.add((dt) => {
+    fluidAcc += dt;
+    if (fluidAcc < 1 / 40) return;
+    fluid.step(Math.min(fluidAcc, 1 / 24));
+    fluidAcc = 0;
+  });
   new ResizeObserver(() => fluid.resize()).observe(screen);
 } else {
   screen.classList.add('no-fluid'); // CSS 渐变兜底
@@ -129,6 +136,9 @@ const device = document.getElementById('device');
 const DEV_W = 1208, DEV_H = 848;
 function fitDevice() {
   const vw = window.innerWidth, vh = window.innerHeight;
+  // 手机竖屏：由 CSS 接管为全屏自适应布局，不再缩放平板机身
+  const phone = vw < 700 && vh > vw;
+  if (phone) { device.style.transform = 'none'; return; }
   const s = vw < 860
     ? Math.min(vw / DEV_W, vh / DEV_H)
     : Math.min((vw - 88) / DEV_W, (vh - 128) / DEV_H, 1.12);

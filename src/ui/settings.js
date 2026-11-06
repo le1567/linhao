@@ -2,8 +2,8 @@
 import { emit } from './state.js';
 import { setGlassBlurScale, setGlassRefract } from '../engine/glass.js';
 
-const KEY = 'lg-settings-v1';
-const DEFAULTS = { fluid: true, refract: true, blur: 1, bright: 0.62 };
+const KEY = 'lg-settings-v2';
+const DEFAULTS = { fluid: true, refract: false, blur: 1, bright: 1 };
 
 export const settings = { ...DEFAULTS, ...load() };
 
@@ -29,7 +29,7 @@ export function applySetting(key, value) {
 
 /** 亮度统一入口（控制中心 / 设置 共用） */
 export function applyBrightness(v) {
-  document.getElementById('screen')?.style.setProperty('--bright', (0.35 + v * 0.65).toFixed(3));
+  document.getElementById('screen')?.style.setProperty('--bright', (0.2 + v * 0.8).toFixed(3));
 }
 
 export function initSettings() {

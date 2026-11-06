@@ -37,7 +37,9 @@ export function initHomescreen(openApp) {
   buildDock(openApp);
 
   const measure = () => {
-    pageW = pagesEl.children[0].getBoundingClientRect().width || 1;
+    // 用 offsetWidth 而不是 rect：锁屏期间 #homescreen 带 scale(1.05)，
+    // rect 会把页宽量成 1.05 倍，导致第二页多偏移一截
+    pageW = pagesEl.children[0].offsetWidth || 1;
   };
   measure();
   new ResizeObserver(measure).observe(document.getElementById('screen'));
